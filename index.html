@@ -3,12 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Induction Motor Explorer — Realistic Animation</title>
   <title>Induction Motor Explorer — Single File</title>
   <style>
     :root {
       --bg: #08111f;
       --card: #101c31;
       --card2: #122341;
+      --line: #243a61;
+      --text: #eaf3ff;
+      --muted: #abc0df;
+      --blue: #4ea1ff;
+      --green: #30d392;
+      --orange: #ff9f43;
+      --pink: #ff79bb;
+    }
       --line: #203457;
       --text: #eaf3ff;
       --muted: #a7bddf;
@@ -23,6 +32,10 @@
       margin: 0;
       color: var(--text);
       font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at 25% 0%, #14305b, #08111f 45%);
+    }
+    .wrap {
+      max-width: 1220px;
       background: radial-gradient(circle at 20% 0%, #12284e, #08111f 45%);
     }
 
@@ -41,6 +54,9 @@
       background: linear-gradient(170deg, var(--card), var(--card2));
       box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
     }
+    h1, h2, h3 { margin: 0 0 0.55rem; }
+    p { margin: 0.35rem 0; }
+    .subtitle { color: var(--muted); line-height: 1.45; }
 
     h1, h2, h3 { margin: 0 0 0.55rem; }
     p { margin: 0.35rem 0; }
@@ -51,6 +67,12 @@
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 0.75rem;
     }
+    label { display: grid; gap: 0.35rem; font-weight: 600; font-size: 0.95rem; }
+    input[type="range"] { width: 100%; }
+    .val { color: var(--muted); font-size: 0.92rem; }
+    .row { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button {
+      border: 1px solid #3a5788;
 
     label {
       display: grid;
@@ -84,6 +106,19 @@
       font-weight: 600;
     }
     button:hover { filter: brightness(1.1); }
+    button.alt { background: #2b3d5d; }
+    button.preset { background: #1a2f54; }
+    .switch { display:flex; align-items:center; gap:.45rem; color:var(--muted); font-size:.92rem; }
+
+    .two-col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0.9rem; }
+    canvas {
+      width: 100%;
+      max-width: 780px;
+      border-radius: 12px;
+      border: 1px solid #2c4977;
+      background: radial-gradient(circle at 50% 45%, #deecff 0%, #c7deff 35%, #b7d3ff 68%);
+      display: block;
+    }
     button.alt { background: #2a3a56; }
     button.preset { background: #1a2f54; }
 
@@ -119,6 +154,9 @@
       vertical-align: middle;
     }
 
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)); gap: 0.55rem; }
+    .card {
+      border: 1px solid #29456f;
     .cards {
       display: grid;
       grid-template-columns: repeat(2, minmax(130px, 1fr));
@@ -132,6 +170,8 @@
     }
     .k { margin: 0; font-size: 0.84rem; color: var(--muted); }
     .v { margin: 0.24rem 0 0; font-size: 1.13rem; }
+    .bar-wrap { margin-top: 0.45rem; width: 100%; height: 12px; border-radius: 999px; background: #20395f; overflow: hidden; }
+    .bar { width: 0; height: 100%; background: linear-gradient(90deg, #2ad58f 0%, #ffc24f 60%, #ff7f50 100%); transition: width 0.15s linear; }
 
     .bar-wrap {
       margin-top: 0.45rem;
@@ -156,6 +196,7 @@
       border-radius: 8px;
       line-height: 1.45;
     }
+    .steps ol, .steps ul { margin: 0.3rem 0 0; padding-left: 1.2rem; line-height: 1.48; color: #d7e5ff; }
 
     .steps ol,
     .steps ul { margin: 0.3rem 0 0; padding-left: 1.2rem; line-height: 1.48; color: #d7e5ff; }
@@ -166,6 +207,7 @@
       border-radius: 6px;
       padding: 0.08rem 0.32rem;
     }
+    @media (max-width: 940px) {
 
     @media (max-width: 930px) {
       .two-col { grid-template-columns: 1fr; }
@@ -176,6 +218,12 @@
 <body>
   <main class="wrap">
     <section class="panel">
+      <h1>Induction Motor Explorer (Single File)</h1>
+      <p class="subtitle">
+        Improved realism: rotor speed now responds dynamically to <strong>electromagnetic torque vs load torque</strong>.
+        Animation depends directly on frequency, poles, load, inertia, and slip behavior.
+      </p>
+      <p class="subtitle"><strong>Main principle:</strong> no slip -> no induced rotor current -> no electromagnetic torque.</p>
       <h1>Induction Motor Explorer (Single HTML File)</h1>
       <p class="subtitle">
         This simulator is designed for your main goal: <strong>clearly understanding the induction motor principle</strong>.
@@ -187,6 +235,27 @@
     <section class="panel">
       <h2>Controls</h2>
       <div class="grid">
+        <label>Supply frequency, f (Hz)
+          <input id="freq" type="range" min="20" max="80" step="1" value="50" />
+          <span class="val" id="freqVal">50 Hz</span>
+        </label>
+        <label>Number of poles, P
+          <input id="poles" type="range" min="2" max="8" step="2" value="4" />
+          <span class="val" id="polesVal">4 poles</span>
+        </label>
+        <label>Mechanical load (%)
+          <input id="load" type="range" min="0" max="100" step="1" value="35" />
+          <span class="val" id="loadVal">35%</span>
+        </label>
+        <label>Manual slip override, s
+          <input id="slip" type="range" min="0.005" max="0.25" step="0.001" value="0.04" />
+          <span class="val" id="slipVal">0.040</span>
+        </label>
+        <label>Rotor inertia J (response)
+          <input id="inertia" type="range" min="0.2" max="3" step="0.1" value="1.2" />
+          <span class="val" id="inertiaVal">1.2</span>
+        </label>
+        <label>Animation speed
         <label>
           Supply frequency, f (Hz)
           <input id="freq" type="range" min="20" max="80" step="1" value="50" />
@@ -224,6 +293,7 @@
         </label>
       </div>
 
+      <div class="row">
       <div class="btn-row">
         <button id="toggle">Pause</button>
         <button id="reset" class="alt">Reset</button>
@@ -231,12 +301,19 @@
         <button class="preset" data-preset="rated">Preset: Rated</button>
         <button class="preset" data-preset="light">Preset: Light load</button>
         <button class="preset" data-preset="overload">Preset: Overload</button>
+        <label class="switch"><input id="autoSlip" type="checkbox" checked /> auto slip from torque/load</label>
       </div>
     </section>
 
     <section class="two-col">
       <article class="panel">
         <h2>Motor cross-section animation</h2>
+        <canvas id="sim" width="780" height="470" aria-label="Induction motor simulation canvas"></canvas>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--blue)"></i>Blue = rotating stator field vector</span>
+          <span><i class="dot" style="background:var(--green)"></i>Green = rotor mechanical vector</span>
+          <span><i class="dot" style="background:var(--orange)"></i>Orange bars = induced rotor current</span>
+          <span><i class="dot" style="background:var(--pink)"></i>Pink = simplified torque-slip curve</span>
         <canvas id="sim" width="760" height="450" aria-label="Induction motor simulation canvas"></canvas>
         <div class="legend">
           <span><i class="dot" style="background:var(--blue)"></i>Blue arrow = stator rotating field</span>
@@ -251,6 +328,13 @@
         <div class="cards">
           <div class="card"><p class="k">Synchronous speed, Ns</p><p class="v"><strong id="ns">1500</strong> rpm</p></div>
           <div class="card"><p class="k">Rotor speed, Nr</p><p class="v"><strong id="nr">1440</strong> rpm</p></div>
+          <div class="card"><p class="k">Slip, s</p><p class="v"><strong id="slipLive">0.040</strong></p></div>
+          <div class="card"><p class="k">Rotor frequency, fr=sf</p><p class="v"><strong id="fr">2.00</strong> Hz</p></div>
+          <div class="card"><p class="k">Electromagnetic torque</p><p class="v"><strong id="te">0.56</strong> pu</p></div>
+          <div class="card"><p class="k">Load torque</p><p class="v"><strong id="tl">0.30</strong> pu</p></div>
+        </div>
+        <div class="bar-wrap"><div id="torqueBar" class="bar"></div></div>
+        <p class="explain" id="explain"></p>
           <div class="card"><p class="k">Slip speed, Ns - Nr</p><p class="v"><strong id="slipSpeed">60</strong> rpm</p></div>
           <div class="card"><p class="k">Rotor frequency, fr = s·f</p><p class="v"><strong id="fr">2.00</strong> Hz</p></div>
           <div class="card"><p class="k">Relative torque (edu.)</p><p class="v"><strong id="torque">0.56</strong> pu</p></div>
@@ -262,6 +346,12 @@
     </section>
 
     <section class="panel steps">
+      <h2>What changed for realism</h2>
+      <ul>
+        <li>Rotor speed is no longer hard-locked; it accelerates/decelerates using <code>dω/dt = (Te - Tl - Bω)/J</code>.</li>
+        <li>Electromagnetic torque depends on slip with a simplified induction-motor shape.</li>
+        <li>Pole count affects synchronous speed and the number of air-gap flux lobes in animation.</li>
+        <li>Load slider directly changes mechanical load torque, which changes steady slip in auto mode.</li>
       <h2>How to understand induction motors practically</h2>
       <ol>
         <li>Start with <strong>Preset: Start-up</strong> and observe high slip and strong induced bars.</li>
@@ -284,10 +374,26 @@
       f: 50,
       p: 4,
       load: 35,
+      slipManual: 0.04,
       slip: 0.04,
       inertia: 1.2,
       timeScale: 1,
       running: true,
+      autoSlip: true,
+      thetaField: 0,
+      thetaRotor: 0,
+      omegaRotor: 0,
+      omegaSync: 0,
+      torqueE: 0,
+      torqueLoad: 0,
+      torqueFric: 0
+    };
+
+    const ui = {
+      freq: $("freq"), poles: $("poles"), load: $("load"), slip: $("slip"), inertia: $("inertia"), timeScale: $("timeScale"), autoSlip: $("autoSlip"),
+      freqVal: $("freqVal"), polesVal: $("polesVal"), loadVal: $("loadVal"), slipVal: $("slipVal"), inertiaVal: $("inertiaVal"), timeScaleVal: $("timeScaleVal"),
+      ns: $("ns"), nr: $("nr"), slipLive: $("slipLive"), fr: $("fr"), te: $("te"), tl: $("tl"), torqueBar: $("torqueBar"), explain: $("explain"),
+      toggle: $("toggle"), reset: $("reset"), presets: document.querySelectorAll(".preset")
       t: 0,
       thetaField: 0,
       thetaRotor: 0,
@@ -306,6 +412,38 @@
     const canvas = $("sim");
     const ctx = canvas.getContext("2d");
 
+    const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+    const rpmToRad = (rpm) => (2 * Math.PI * rpm) / 60;
+    const radToRpm = (rad) => (rad * 60) / (2 * Math.PI);
+
+    function rpmSync(f, p) {
+      return (120 * f) / p;
+    }
+
+    function torqueFromSlip(slip) {
+      const s = clamp(slip, 0.002, 0.25);
+      const r2 = 0.06;
+      const x2 = 0.34;
+      const base = s / (r2 * r2 + (x2 * s) ** 2);
+      return clamp(base / 18, 0, 1.8);
+    }
+
+    function loadTorqueFromSlider(loadPct) {
+      return 0.08 + 1.1 * (loadPct / 100) ** 1.5;
+    }
+
+    function zoneText(slip, te, tl) {
+      if (slip < 0.015) return "Near no-load: rotor almost catches rotating field. Induced current is weak, so torque is low.";
+      if (te > tl + 0.08) return "Accelerating: electromagnetic torque is above load torque, so rotor speed rises and slip tends to reduce.";
+      if (Math.abs(te - tl) < 0.08) return "Steady operating point: motor torque approximately balances load torque.";
+      return "Loaded region: load torque is high, so slip increases to induce more rotor current and torque.";
+    }
+
+    function updateLabels() {
+      ui.freqVal.textContent = `${state.f} Hz`;
+      ui.polesVal.textContent = `${state.p} poles`;
+      ui.loadVal.textContent = `${state.load}%`;
+      ui.slipVal.textContent = state.slipManual.toFixed(3);
     function rpmSync(f, p) { return (120 * f) / p; }
 
     function slipFromLoad(loadPct) {
@@ -339,6 +477,22 @@
     }
 
     function updateReadout() {
+      const ns = radToRpm(state.omegaSync);
+      const nr = radToRpm(state.omegaRotor);
+      const fr = state.slip * state.f;
+      ui.ns.textContent = ns.toFixed(0);
+      ui.nr.textContent = nr.toFixed(0);
+      ui.slipLive.textContent = state.slip.toFixed(3);
+      ui.fr.textContent = fr.toFixed(2);
+      ui.te.textContent = state.torqueE.toFixed(2);
+      ui.tl.textContent = state.torqueLoad.toFixed(2);
+      ui.torqueBar.style.width = `${Math.min((state.torqueE / 1.8) * 100, 100)}%`;
+      ui.explain.textContent = zoneText(state.slip, state.torqueE, state.torqueLoad);
+    }
+
+    function drawArrow(cx, cy, angle, len, color, label) {
+      const x2 = cx + Math.cos(angle) * len;
+      const y2 = cy + Math.sin(angle) * len;
       const ns = rpmSync(state.f, state.p);
       const nr = ns * (1 - state.slip);
       const ss = ns - nr;
@@ -366,6 +520,13 @@
       ctx.moveTo(cx, cy);
       ctx.lineTo(x2, y2);
       ctx.stroke();
+      const h = 12;
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - h * Math.cos(angle - 0.35), y2 - h * Math.sin(angle - 0.35));
+      ctx.lineTo(x2 - h * Math.cos(angle + 0.35), y2 - h * Math.sin(angle + 0.35));
+      ctx.closePath();
+      ctx.fill();
 
       const h = 12;
       ctx.beginPath();
@@ -379,6 +540,46 @@
       ctx.fillText(label, x2 + 8, y2 + 8);
     }
 
+    function drawAirgapFlux(cx, cy, r, polePairs, thetaField) {
+      const segments = 64;
+      for (let i = 0; i < segments; i++) {
+        const a1 = (i / segments) * 2 * Math.PI;
+        const a2 = ((i + 1) / segments) * 2 * Math.PI;
+        const amid = (a1 + a2) * 0.5;
+        const b = 0.5 + 0.5 * Math.sin(polePairs * (amid - thetaField));
+        const alpha = 0.08 + 0.22 * b;
+        ctx.strokeStyle = `rgba(78,161,255,${alpha.toFixed(3)})`;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, a1, a2);
+        ctx.stroke();
+      }
+    }
+
+    function drawTorqueCurve(x, y, w, h, slip) {
+      ctx.save();
+      ctx.strokeStyle = "#31507c";
+      ctx.strokeRect(x, y, w, h);
+      ctx.beginPath();
+      for (let i = 0; i <= 100; i++) {
+        const s = 0.002 + (i / 100) * 0.25;
+        const tq = Math.min(torqueFromSlip(s) / 1.8, 1);
+        const px = x + (i / 100) * w;
+        const py = y + h - tq * h;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = "#ff79bb";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      const sx = x + ((slip - 0.002) / 0.25) * w;
+      const sy = y + h - Math.min(torqueFromSlip(slip) / 1.8, 1) * h;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1b355a";
+      ctx.font = "12px sans-serif";
+      ctx.fillText("Torque-slip characteristic", x + 6, y - 6);
     function drawTorqueCurve(x, y, w, h, slip) {
       ctx.save();
       ctx.strokeStyle = "#2f4f7d";
@@ -415,6 +616,9 @@
       const h = canvas.height;
       const cx = w * 0.5;
       const cy = h * 0.48;
+      const statorR = 154;
+      const rotorR = 98;
+      const polePairs = state.p / 2;
       const statorR = 152;
       const rotorR = 96;
 
@@ -426,12 +630,15 @@
       ctx.arc(cx, cy, statorR, 0, Math.PI * 2);
       ctx.stroke();
 
+      drawAirgapFlux(cx, cy, statorR - 12, polePairs, state.thetaField);
+
       for (let phase = 0; phase < 3; phase++) {
         const b = (phase * 2 * Math.PI) / 3;
         for (let side = 0; side < 2; side++) {
           const a = b + side * Math.PI;
           const px = cx + Math.cos(a) * (statorR - 6);
           const py = cy + Math.sin(a) * (statorR - 6);
+          ctx.fillStyle = "#587aa9";
           ctx.fillStyle = "#5778a6";
           ctx.beginPath();
           ctx.arc(px, py, 7.5, 0, Math.PI * 2);
@@ -445,12 +652,20 @@
       ctx.fill();
 
       const rel = state.thetaField - state.thetaRotor;
+      const bars = 20;
+      const barAlphaBase = clamp(0.08 + state.slip * 2.7, 0.1, 0.7);
+      for (let i = 0; i < bars; i++) {
+        const a = state.thetaRotor + (i * 2 * Math.PI) / bars;
       for (let i = 0; i < 16; i++) {
         const a = state.thetaRotor + (i * 2 * Math.PI) / 16;
         const x1 = cx + Math.cos(a) * (rotorR - 25);
         const y1 = cy + Math.sin(a) * (rotorR - 25);
         const x2 = cx + Math.cos(a) * (rotorR - 3);
         const y2 = cy + Math.sin(a) * (rotorR - 3);
+        const em = Math.sin((state.p / 2) * rel + i * 0.45) * state.slip;
+        const alpha = clamp(barAlphaBase + Math.abs(em) * 1.5, 0.08, 1);
+        ctx.strokeStyle = `rgba(255,159,67,${alpha.toFixed(3)})`;
+        ctx.lineWidth = 4.6;
         const em = Math.sin(rel + i * 0.65) * state.slip;
         const alpha = Math.min(1, 0.2 + Math.abs(em) * 8);
         ctx.strokeStyle = `rgba(255,159,67,${alpha.toFixed(2)})`;
@@ -461,6 +676,56 @@
         ctx.stroke();
       }
 
+      drawArrow(cx, cy, state.thetaField, 122, "#4ea1ff", "Stator field");
+      drawArrow(cx, cy, state.thetaRotor, 87, "#30d392", "Rotor");
+
+      ctx.fillStyle = "#183b65";
+      ctx.font = "14px sans-serif";
+      ctx.fillText(`Pole pairs: ${polePairs} | higher P => lower Ns`, 20, 28);
+      ctx.fillText(`Slip: ${state.slip.toFixed(3)} | Load: ${state.load}%`, 20, 48);
+
+      drawTorqueCurve(w - 260, h - 120, 230, 85, state.slip);
+    }
+
+    function setPreset(name) {
+      if (name === "startup") {
+        state.f = 50; state.p = 4; state.load = 95; state.slipManual = 0.18; state.autoSlip = true;
+      } else if (name === "rated") {
+        state.f = 50; state.p = 4; state.load = 35; state.slipManual = 0.04; state.autoSlip = true;
+      } else if (name === "light") {
+        state.f = 50; state.p = 4; state.load = 8; state.slipManual = 0.012; state.autoSlip = true;
+      } else if (name === "overload") {
+        state.f = 50; state.p = 4; state.load = 80; state.slipManual = 0.12; state.autoSlip = true;
+      }
+      ui.freq.value = String(state.f);
+      ui.poles.value = String(state.p);
+      ui.load.value = String(state.load);
+      ui.slip.value = String(state.slipManual);
+      ui.autoSlip.checked = state.autoSlip;
+    }
+
+    function physicsStep(dt) {
+      const nsRpm = rpmSync(state.f, state.p);
+      state.omegaSync = rpmToRad(nsRpm);
+
+      if (!state.autoSlip) {
+        state.slip = clamp(state.slipManual, 0.005, 0.25);
+        state.omegaRotor = state.omegaSync * (1 - state.slip);
+      } else {
+        state.slip = clamp((state.omegaSync - state.omegaRotor) / Math.max(state.omegaSync, 1e-6), 0.005, 0.25);
+      }
+
+      state.torqueE = torqueFromSlip(state.slip);
+      state.torqueLoad = loadTorqueFromSlider(state.load);
+      state.torqueFric = 0.03 + 0.02 * (state.omegaRotor / Math.max(state.omegaSync, 1e-6));
+
+      if (state.autoSlip) {
+        const accel = (state.torqueE - state.torqueLoad - state.torqueFric) / Math.max(state.inertia, 0.15);
+        state.omegaRotor = clamp(state.omegaRotor + accel * dt * 4.2, 0, state.omegaSync * 1.02);
+      }
+
+      state.thetaField += state.omegaSync * dt;
+      state.thetaRotor += state.omegaRotor * dt;
       drawArrow(cx, cy, state.thetaField, 120, "#4ea1ff", "Stator field");
       drawArrow(cx, cy, state.thetaRotor, 84, "#2ed38e", "Rotor");
 
@@ -497,6 +762,13 @@
       tick.last = ts;
 
       if (state.running) {
+        physicsStep(dt);
+      }
+
+      ui.slip.value = state.autoSlip ? state.slip.toFixed(3) : String(state.slipManual);
+      updateLabels();
+      updateReadout();
+      drawMotor();
         const ns = rpmSync(state.f, state.p);
         const omegaSync = (2 * Math.PI * ns) / 60;
 
@@ -521,6 +793,11 @@
 
     ui.freq.addEventListener("input", (e) => { state.f = Number(e.target.value); });
     ui.poles.addEventListener("input", (e) => { state.p = Number(e.target.value); });
+    ui.load.addEventListener("input", (e) => { state.load = Number(e.target.value); });
+    ui.slip.addEventListener("input", (e) => { state.slipManual = Number(e.target.value); state.autoSlip = false; ui.autoSlip.checked = false; });
+    ui.inertia.addEventListener("input", (e) => { state.inertia = Number(e.target.value); });
+    ui.timeScale.addEventListener("input", (e) => { state.timeScale = Number(e.target.value); });
+    ui.autoSlip.addEventListener("change", (e) => { state.autoSlip = e.target.checked; });
     ui.load.addEventListener("input", (e) => { state.load = Number(e.target.value); state.autoSlip = true; });
     ui.slip.addEventListener("input", (e) => { state.slip = Number(e.target.value); state.autoSlip = false; });
     ui.inertia.addEventListener("input", (e) => { state.inertia = Number(e.target.value); });
@@ -535,6 +812,15 @@
       state.f = 50;
       state.p = 4;
       state.load = 35;
+      state.slipManual = 0.04;
+      state.inertia = 1.2;
+      state.timeScale = 1;
+      state.running = true;
+      state.autoSlip = true;
+      state.omegaSync = rpmToRad(rpmSync(state.f, state.p));
+      state.omegaRotor = state.omegaSync * 0.96;
+      state.thetaField = 0;
+      state.thetaRotor = 0;
       state.slip = 0.04;
       state.inertia = 1.2;
       state.timeScale = 1;
@@ -549,6 +835,18 @@
       ui.slip.value = "0.04";
       ui.inertia.value = "1.2";
       ui.timeScale.value = "1";
+      ui.autoSlip.checked = true;
+      ui.toggle.textContent = "Pause";
+    });
+
+    ui.presets.forEach((btn) => btn.addEventListener("click", () => setPreset(btn.dataset.preset)));
+
+    state.omegaSync = rpmToRad(rpmSync(state.f, state.p));
+    state.omegaRotor = state.omegaSync * 0.96;
+    updateLabels();
+    updateReadout();
+    requestAnimationFrame(tick);
+  </script>
       ui.toggle.textContent = "Pause";
 
       updateControlLabels();
