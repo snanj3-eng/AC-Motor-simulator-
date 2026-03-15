@@ -1,3 +1,12 @@
+# Induction Motor Explorer (Single HTML File)
+
+This project is now a **single-file HTML/CSS/JavaScript simulator**.
+
+## Run
+
+Just open `index.html` directly in your browser.
+
+Or run a local server:
 # Induction Motor Learning Simulator (HTML/CSS/JavaScript)
 
 This project is a simple website to **clearly and practically** understand how an induction motor works.
