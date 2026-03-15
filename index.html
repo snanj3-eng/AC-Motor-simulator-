@@ -256,6 +256,16 @@
           <span class="val" id="inertiaVal">1.2</span>
         </label>
         <label>Animation speed
+          <input id="timeScale" type="range" min="0.2" max="3" step="0.1" value="1" />
+          <span class="val" id="timeScaleVal">1.0×</span>
+        </label>
+        <label>Visible motion scale (for human eye)
+          <input id="visualScale" type="range" min="0.02" max="0.25" step="0.01" value="0.08" />
+          <span class="val" id="visualScaleVal">0.08×</span>
+        </label>
+      </div>
+
+      <div class="row">
         <label>
           Supply frequency, f (Hz)
           <input id="freq" type="range" min="20" max="80" step="1" value="50" />
@@ -378,10 +388,13 @@
       slip: 0.04,
       inertia: 1.2,
       timeScale: 1,
+      visualScale: 0.08,
       running: true,
       autoSlip: true,
       thetaField: 0,
       thetaRotor: 0,
+      thetaFieldView: 0,
+      thetaRotorView: 0,
       omegaRotor: 0,
       omegaSync: 0,
       torqueE: 0,
@@ -390,6 +403,10 @@
     };
 
     const ui = {
+      freq: $("freq"), poles: $("poles"), load: $("load"), slip: $("slip"), inertia: $("inertia"), timeScale: $("timeScale"), visualScale: $("visualScale"), autoSlip: $("autoSlip"),
+      freqVal: $("freqVal"), polesVal: $("polesVal"), loadVal: $("loadVal"), slipVal: $("slipVal"), inertiaVal: $("inertiaVal"), timeScaleVal: $("timeScaleVal"), visualScaleVal: $("visualScaleVal"),
+      ns: $("ns"), nr: $("nr"), slipLive: $("slipLive"), fr: $("fr"), te: $("te"), tl: $("tl"), torqueBar: $("torqueBar"), explain: $("explain"),
+      toggle: $("toggle"), reset: $("reset"), presets: document.querySelectorAll(".preset")
       freq: $("freq"), poles: $("poles"), load: $("load"), slip: $("slip"), inertia: $("inertia"), timeScale: $("timeScale"), autoSlip: $("autoSlip"),
       freqVal: $("freqVal"), polesVal: $("polesVal"), loadVal: $("loadVal"), slipVal: $("slipVal"), inertiaVal: $("inertiaVal"), timeScaleVal: $("timeScaleVal"),
       ns: $("ns"), nr: $("nr"), slipLive: $("slipLive"), fr: $("fr"), te: $("te"), tl: $("tl"), torqueBar: $("torqueBar"), explain: $("explain"),
@@ -630,6 +647,7 @@
       ctx.arc(cx, cy, statorR, 0, Math.PI * 2);
       ctx.stroke();
 
+      drawAirgapFlux(cx, cy, statorR - 12, polePairs, state.thetaFieldView);
       drawAirgapFlux(cx, cy, statorR - 12, polePairs, state.thetaField);
 
       for (let phase = 0; phase < 3; phase++) {
@@ -651,6 +669,11 @@
       ctx.arc(cx, cy, rotorR, 0, Math.PI * 2);
       ctx.fill();
 
+      const rel = state.thetaFieldView - state.thetaRotorView;
+      const bars = 20;
+      const barAlphaBase = clamp(0.08 + state.slip * 2.7, 0.1, 0.7);
+      for (let i = 0; i < bars; i++) {
+        const a = state.thetaRotorView + (i * 2 * Math.PI) / bars;
       const rel = state.thetaField - state.thetaRotor;
       const bars = 20;
       const barAlphaBase = clamp(0.08 + state.slip * 2.7, 0.1, 0.7);
@@ -676,6 +699,8 @@
         ctx.stroke();
       }
 
+      drawArrow(cx, cy, state.thetaFieldView, 122, "#4ea1ff", "Stator field");
+      drawArrow(cx, cy, state.thetaRotorView, 87, "#30d392", "Rotor");
       drawArrow(cx, cy, state.thetaField, 122, "#4ea1ff", "Stator field");
       drawArrow(cx, cy, state.thetaRotor, 87, "#30d392", "Rotor");
 
@@ -702,6 +727,7 @@
       ui.load.value = String(state.load);
       ui.slip.value = String(state.slipManual);
       ui.autoSlip.checked = state.autoSlip;
+      ui.visualScale.value = String(state.visualScale);
     }
 
     function physicsStep(dt) {
@@ -726,6 +752,10 @@
 
       state.thetaField += state.omegaSync * dt;
       state.thetaRotor += state.omegaRotor * dt;
+
+      const vis = clamp(state.visualScale, 0.02, 0.25);
+      state.thetaFieldView += state.omegaSync * dt * vis;
+      state.thetaRotorView += state.omegaRotor * dt * vis;
       drawArrow(cx, cy, state.thetaField, 120, "#4ea1ff", "Stator field");
       drawArrow(cx, cy, state.thetaRotor, 84, "#2ed38e", "Rotor");
 
@@ -797,6 +827,8 @@
     ui.slip.addEventListener("input", (e) => { state.slipManual = Number(e.target.value); state.autoSlip = false; ui.autoSlip.checked = false; });
     ui.inertia.addEventListener("input", (e) => { state.inertia = Number(e.target.value); });
     ui.timeScale.addEventListener("input", (e) => { state.timeScale = Number(e.target.value); });
+    ui.visualScale.addEventListener("input", (e) => { state.visualScale = Number(e.target.value); });
+    ui.autoSlip.addEventListener("change", (e) => { state.autoSlip = e.target.checked; });
     ui.autoSlip.addEventListener("change", (e) => { state.autoSlip = e.target.checked; });
     ui.load.addEventListener("input", (e) => { state.load = Number(e.target.value); state.autoSlip = true; });
     ui.slip.addEventListener("input", (e) => { state.slip = Number(e.target.value); state.autoSlip = false; });
@@ -815,12 +847,15 @@
       state.slipManual = 0.04;
       state.inertia = 1.2;
       state.timeScale = 1;
+      state.visualScale = 0.08;
       state.running = true;
       state.autoSlip = true;
       state.omegaSync = rpmToRad(rpmSync(state.f, state.p));
       state.omegaRotor = state.omegaSync * 0.96;
       state.thetaField = 0;
       state.thetaRotor = 0;
+      state.thetaFieldView = 0;
+      state.thetaRotorView = 0;
       state.slip = 0.04;
       state.inertia = 1.2;
       state.timeScale = 1;
@@ -835,6 +870,7 @@
       ui.slip.value = "0.04";
       ui.inertia.value = "1.2";
       ui.timeScale.value = "1";
+      ui.visualScale.value = "0.08";
       ui.autoSlip.checked = true;
       ui.toggle.textContent = "Pause";
     });
@@ -843,6 +879,8 @@
 
     state.omegaSync = rpmToRad(rpmSync(state.f, state.p));
     state.omegaRotor = state.omegaSync * 0.96;
+    state.thetaFieldView = 0;
+    state.thetaRotorView = 0;
     updateLabels();
     updateReadout();
     requestAnimationFrame(tick);
