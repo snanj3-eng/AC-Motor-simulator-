@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Induction Motor Learning Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="hero panel">
+      <h1>Induction Motor Learning Simulator</h1>
+      <p class="subtitle">
+        Goal: understand <strong>why induction motors produce torque</strong> and why they must run with <strong>slip</strong>.
+      </p>
+      <p class="micro">Simple model for education (not a full electromagnetic finite-element model).</p>
+    </header>
+
+    <section class="panel controls">
+      <h2>1) Control the motor</h2>
+      <div class="grid">
+        <label>
+          Supply frequency (Hz)
+          <input id="freq" type="range" min="20" max="80" step="1" value="50" />
+          <span id="freqVal">50 Hz</span>
+        </label>
+        <label>
+          Number of poles
+          <input id="poles" type="range" min="2" max="8" step="2" value="4" />
+          <span id="polesVal">4 poles</span>
+        </label>
+        <label>
+          Slip, s (per-unit)
+          <input id="slip" type="range" min="0.005" max="0.25" step="0.005" value="0.04" />
+          <span id="slipVal">0.040</span>
+        </label>
+        <label>
+          Animation speed
+          <input id="timeScale" type="range" min="0.2" max="3" step="0.1" value="1" />
+          <span id="timeScaleVal">1.0×</span>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="toggleAnim">Pause</button>
+        <button id="reset">Reset</button>
+      </div>
+
+      <h3>2) Quick learning presets</h3>
+      <div class="preset-row">
+        <button class="preset" data-preset="start">Start-up (high slip)</button>
+        <button class="preset" data-preset="rated">Normal run</button>
+        <button class="preset" data-preset="light">Light load</button>
+        <button class="preset" data-preset="overload">Overload tendency</button>
+      </div>
+    </section>
+
+    <section class="panel visual">
+      <h2>3) Watch what happens in cross-section</h2>
+      <canvas id="motorCanvas" width="700" height="430" aria-label="Induction motor visual simulation"></canvas>
+      <div class="legend">
+        <span><i class="dot field"></i>Blue: rotating stator field</span>
+        <span><i class="dot rotor"></i>Green: rotor mechanical angle</span>
+        <span><i class="dot emf"></i>Orange bars: induced rotor current strength</span>
+      </div>
+    </section>
+
+    <section class="panel output">
+      <h2>4) Live values + practical meaning</h2>
+
+      <div class="metrics">
+        <article>
+          <p class="k">Synchronous speed</p>
+          <p class="v"><strong id="ns">1500</strong> rpm</p>
+          <p class="m">Speed of rotating stator field</p>
+        </article>
+        <article>
+          <p class="k">Rotor speed</p>
+          <p class="v"><strong id="nr">1440</strong> rpm</p>
+          <p class="m">Mechanical shaft speed</p>
+        </article>
+        <article>
+          <p class="k">Slip speed (Ns - Nr)</p>
+          <p class="v"><strong id="slipSpeed">60</strong> rpm</p>
+          <p class="m">Relative motion that induces rotor EMF</p>
+        </article>
+        <article>
+          <p class="k">Rotor current frequency, fr = s·f</p>
+          <p class="v"><strong id="fr">2.00</strong> Hz</p>
+          <p class="m">Electrical frequency seen in rotor bars</p>
+        </article>
+      </div>
+
+      <div class="torque-box">
+        <p><strong>Estimated relative torque (educational)</strong>: <span id="torqueVal">0.56 pu</span></p>
+        <div class="bar-wrap" aria-label="relative torque bar"><div id="torqueBar" class="bar"></div></div>
+      </div>
+
+      <p id="explain" class="explain"></p>
+    </section>
+
+    <section class="panel theory">
+      <h2>Core principle in one sentence</h2>
+      <p class="bigline">
+        <strong>No slip -> no induced rotor EMF -> no rotor current -> no electromagnetic torque.</strong>
+      </p>
+
+      <h3>Step-by-step physical story</h3>
+      <ol>
+        <li>3-phase stator currents create a rotating magnetic field at synchronous speed (<code>Ns = 120f/P</code>).</li>
+        <li>Because rotor is slower, the field sweeps past rotor conductors (relative speed = slip speed).</li>
+        <li>This relative motion induces rotor EMF and current (<code>fr = s·f</code>).</li>
+        <li>Rotor current creates its own magnetic field, interacting with stator field to produce torque.</li>
+        <li>The rotor accelerates, reducing slip, until electromagnetic torque balances load torque.</li>
+      </ol>
+
+      <h3>Practical experiments to try</h3>
+      <ul>
+        <li><strong>Experiment A:</strong> Keep poles fixed, increase frequency. Notice both field speed and rotor speed increase.</li>
+        <li><strong>Experiment B:</strong> Keep frequency fixed, increase poles. Synchronous speed drops.</li>
+        <li><strong>Experiment C:</strong> Move slip close to zero. Orange bars fade and torque estimate drops.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
